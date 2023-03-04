@@ -1,6 +1,7 @@
 __pycache__
 .env
 .history
+node_modules
 .hypothesis/
 build/
 reports/
