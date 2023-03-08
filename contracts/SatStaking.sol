@@ -462,7 +462,7 @@ contract SATStaking is ReentrancyGuard{
 
     /** Satoshis Vision token interface and Safety Wrapper **/
     using SafeERC20 for IERC20;
-    IERC20 public SatoshisVision;
+    IERC20 public SatoshisVision = IERC20(0xCc5DD33CA0B61cc33A14fFBeBDa0a818ef71223c); //Testnet Addr
 
     uint public immutable LaunchTime;
     uint public TotalShares; 
@@ -473,7 +473,7 @@ contract SATStaking is ReentrancyGuard{
     uint private LobbyScale = 4;
     uint private DurationScale = 700;
 
-    address private Reserve;
+    address private Reserve = 0xDcFdAA7007B52BFF8AE7EA379F24B742C64A7868; //Testnet Addr
 
     struct StakeCollection {
         uint share;
@@ -495,10 +495,8 @@ contract SATStaking is ReentrancyGuard{
     mapping(uint => uint) public lobbyTotalEth;
     mapping(uint => uint) public lobbyCut;
 
-    constructor(address _satsAddr, address _resAddr) {
+    constructor() {
         LaunchTime = block.timestamp;
-        SatoshisVision = IERC20(_satsAddr);
-        Reserve = _resAddr;
     }
 
     function contractBalance() 
@@ -553,7 +551,7 @@ contract SATStaking is ReentrancyGuard{
         
         uint TotalSATS = contractBalance();
         uint SATS = sc.share * TotalSATS / TotalShares;
-        uint payout = _calculatePayout(SATS, sc.duration);
+        uint payout = _calculatePayout(SATS, sc.duration * 1 days);
         uint totalPayout = SATS + payout;
 
         uint delay = block.timestamp - sc.payday;
@@ -594,7 +592,7 @@ contract SATStaking is ReentrancyGuard{
         }
 
         else{
-            uint payout = _calculatePayout(SATS, sc.duration);
+            uint payout = _calculatePayout(SATS, sc.duration * 1 days);
             totalPayout = SATS + payout;
             
             uint delay = block.timestamp - sc.payday;
@@ -616,12 +614,12 @@ contract SATStaking is ReentrancyGuard{
         emit DirectStakeClaim(msg.sender, totalPayout, stakersArray[msg.sender].length);
     }
 
-    function _calculatePayout(uint _sats, uint _duration)
+    function _calculatePayout(uint _sats, uint _seconds)
         internal 
         pure 
         returns (uint)
     {
-        uint longerPaysBetter = (_sats * _duration) / 1820;
+        uint longerPaysBetter = (_sats * (_seconds / 1 days)) / 1820;
         uint biggerPaysBetter = _sats < 1e15 ? (_sats ** 2) / 21e15 : 4e13;
         return longerPaysBetter + biggerPaysBetter;
     }
@@ -630,24 +628,23 @@ contract SATStaking is ReentrancyGuard{
         internal 
         returns (uint)
     {
-        require(_seconds > 0, "Atleast a second");
         uint totalPayout;
         uint penalty;
-        if (_seconds >= 7 days && _seconds < MinUnstakePenalty){
-            uint payout = _calculatePayout(_sats, _seconds / 1 days);
-            penalty = MinUnstakePenalty / _seconds * payout;
-            totalPayout = (_sats + payout) - penalty;
+        if (_seconds < 1 days){
+            penalty = _sats / 2;
+            totalPayout = penalty;
         }
-        else if (_seconds < 7 days){
-            penalty = MinUnstakePenalty / _seconds * _sats;
-            totalPayout = _sats - penalty;
+        if (_seconds >= 1 days && _seconds < MinUnstakePenalty){
+            uint payout = _calculatePayout(_sats, _seconds);
+            penalty = (payout * MinUnstakePenalty) / _seconds;
+            totalPayout = _sats + payout > penalty ? (_sats + payout) - penalty : _sats / 2;
         }
         else{
-            uint payout = (_calculatePayout(_sats, _seconds / 1 days)) / 2;
+            uint payout = (_calculatePayout(_sats, _seconds)) / 2;
             penalty = payout;
             totalPayout = _sats + payout;
         }
-        if (totalPayout != 0) {
+        if (penalty <= _sats) {
             lobbyCut[(block.timestamp - LaunchTime) / 1 days] += penalty / LobbyScale;
         }
         return totalPayout;
