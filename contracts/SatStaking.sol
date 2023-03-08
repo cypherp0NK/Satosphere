@@ -634,7 +634,7 @@ contract SATStaking is ReentrancyGuard{
             penalty = _sats / 2;
             totalPayout = penalty;
         }
-        if (_seconds >= 1 days && _seconds < MinUnstakePenalty){
+        else if (_seconds >= 1 days && _seconds < MinUnstakePenalty){
             uint payout = _calculatePayout(_sats, _seconds);
             penalty = (payout * MinUnstakePenalty) / _seconds;
             totalPayout = _sats + payout > penalty ? (_sats + payout) - penalty : _sats / 2;
