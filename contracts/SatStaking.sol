@@ -673,7 +673,7 @@ contract SATStaking is ReentrancyGuard{
         view
         returns (uint)
     {
-        require(_duration <= MaxStakeDuration, "Max stake duration is 5479 days");
+        require(_duration <= MaxStakeDuration, "Max stake duration is 5479 days: 15 years");
         
         uint longerPaysBetter = (_sats * _duration) / 1820;
         uint biggerPaysBetter = _sats < 1e15 ? (_sats ** 2) / 21e15 : 4e13;
