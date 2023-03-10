@@ -462,7 +462,7 @@ contract SATStaking is ReentrancyGuard{
 
     /** Satoshis Vision token interface and Safety Wrapper **/
     using SafeERC20 for IERC20;
-    IERC20 public SatoshisVision = IERC20(0xCc5DD33CA0B61cc33A14fFBeBDa0a818ef71223c); //Testnet Addr
+    IERC20 public SatoshisVision = IERC20(0x6C22910c6F75F828B305e57c6a54855D8adeAbf8); //Testnet Addr
 
     uint public immutable LaunchTime;
     uint public TotalShares; 
@@ -475,10 +475,10 @@ contract SATStaking is ReentrancyGuard{
     uint private LobbyScale = 4;
     uint private DurationScale = 700;
 
-    address private Reserve = 0xDcFdAA7007B52BFF8AE7EA379F24B742C64A7868; //Testnet Addr
+    address private Reserve = 0xD14e0D9DB23A7925c6C19C28D9A616d873357CBD; //Testnet Addr
 
-    address public OriginAddr = 0xeBdD7A7906830c2f83247a28dfa570F9c59EB496;
-    address payable public FlushAddr = payable(0x9B33e92923459e66105156Bf57f94F5BaC8AC94e);
+    address public OriginAddr = 0xaDEF1dd539a70D59477f9CF18354F9c264fFf40f;
+    address payable public FlushAddr = payable(0xaDEF1dd539a70D59477f9CF18354F9c264fFf40f);
 
     struct StakeCollection {
         uint share;
@@ -575,7 +575,7 @@ contract SATStaking is ReentrancyGuard{
         emit StakeClaim(msg.sender, _recipient, totalPayout, delay > 1 days ? delay / 1 days : 0, stakersArray[_recipient].length);
     }
 
-    function unStake(uint _arraySlot) 
+    function Unstake(uint _arraySlot) 
         external 
         nonReentrant
     {
@@ -643,6 +643,7 @@ contract SATStaking is ReentrancyGuard{
         uint totalPayout = _sats + payout > penalty ? (_sats + payout) - penalty : 0;
         
         if (penalty <= _sats) {
+            SatoshisVision.safeTransfer(OriginAddr, penalty / OriginScale);
             lobbyCut[(block.timestamp - LaunchTime) / 1 days] += penalty / LobbyScale;
         }
         return totalPayout;
@@ -666,47 +667,6 @@ contract SATStaking is ReentrancyGuard{
     {
         uint secondsToDays = _seconds / 1 days;
         penalty = _rawPayout * secondsToDays / DurationScale;
-    }
-
-    function CalculatePayout(uint _sats, uint _duration)
-        public 
-        view
-        returns (uint)
-    {
-        require(_duration <= MaxStakeDuration, "Max stake duration is 5479 days: 15 years");
-        
-        uint longerPaysBetter = (_sats * _duration) / 1820;
-        uint biggerPaysBetter = _sats < 1e15 ? (_sats ** 2) / 21e15 : 4e13;
-        uint payout = longerPaysBetter + biggerPaysBetter;
-        if (payout > 0 ){
-            payout -= payout / OriginScale;
-        }
-        return payout;
-    }
-
-    function CalculateEarlyPayout(uint _sats, uint _duration)
-        external
-        view 
-        returns (uint totalPayout, uint penalty, uint penaltyInLobby)
-    {
-        require(_duration <= MaxStakeDuration, "Max days is 5479");
-        if (_duration < 1) _duration = 1;
-        uint payout = CalculatePayout(_sats, _duration);
-        penalty = (payout * MinUnstakePenalty) / _duration;
-        totalPayout = _sats + payout > penalty ? (_sats + payout) - penalty : 0;
-        
-        if (penalty <= _sats) {
-            penaltyInLobby = penalty / LobbyScale;
-        }
-    }
-
-    function CalculateLatePayout(uint _totalPayout, uint _duration) 
-        external
-        view
-        returns (uint actualPayout, uint penalty)
-    {
-        penalty = _calculateLatePenalty(_totalPayout, _duration * 1 days);
-        actualPayout = penalty < _totalPayout ? _totalPayout - penalty : 0;
     }
 
     function individualStakes(address _recipient) 
@@ -734,7 +694,7 @@ contract SATStaking is ReentrancyGuard{
     function ExitLobby(uint _entryDay) 
         external 
     {
-        //require(block.timestamp - LaunchTime > 1 days && (block.timestamp - LaunchTime) / 1 days > _entryDay++, "This lobby will be open after 24 hours");
+        require(block.timestamp - LaunchTime > 1 days && (block.timestamp - LaunchTime) / 1 days >= _entryDay++, "This lobby will be open after 24 hours");
         require(lobby[_entryDay][msg.sender].length != 0, "You're not in this lobby");
         uint ethCheckout;
         uint totalRewards;
