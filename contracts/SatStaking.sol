@@ -435,12 +435,12 @@ contract SATStaking is ReentrancyGuard{
         address indexed staker,
         uint payout,
         uint daysDelayed,
-        uint activeStakes
+        uint activeStakesLeft
     );
     event DirectStakeClaim(
         address indexed staker,
         uint payout,
-        uint activeStakes
+        uint activeStakesLeft
     );
 
     /**  Lobby event logs **/
