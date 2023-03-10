@@ -462,7 +462,7 @@ contract SATStaking is ReentrancyGuard{
 
     /** Satoshis Vision token interface and Safety Wrapper **/
     using SafeERC20 for IERC20;
-    IERC20 public SatoshisVision = IERC20(0x6C22910c6F75F828B305e57c6a54855D8adeAbf8); //Testnet Addr
+    IERC20 public SatoshisVision = IERC20(0x6C22910c6F75F828B305e57c6a54855D8adeAbf8);
 
     uint public immutable LaunchTime;
     uint public TotalShares; 
@@ -475,7 +475,7 @@ contract SATStaking is ReentrancyGuard{
     uint private LobbyScale = 4;
     uint private DurationScale = 700;
 
-    address private Reserve = 0xD14e0D9DB23A7925c6C19C28D9A616d873357CBD; //Testnet Addr
+    address private Reserve = 0xD14e0D9DB23A7925c6C19C28D9A616d873357CBD;
 
     address public OriginAddr = 0xaDEF1dd539a70D59477f9CF18354F9c264fFf40f;
     address payable public FlushAddr = payable(0xaDEF1dd539a70D59477f9CF18354F9c264fFf40f);
