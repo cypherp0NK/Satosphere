@@ -581,7 +581,7 @@ contract SATStaking is ReentrancyGuard{
         emit StakeClaim(msg.sender, _recipient, totalPayout, delay > 1 days ? delay / 1 days : 0, stakersArray[_recipient].length);
     }
 
-    function Unstake(uint _arraySlot) 
+    function unstake(uint _arraySlot) 
         external 
         nonReentrant
     {
@@ -688,7 +688,7 @@ contract SATStaking is ReentrancyGuard{
         return stakersArray[_recipient].length;
     }
 
-    function EnterLobby(address _referralAddress) 
+    function enterLobby(address _referralAddress) 
         external 
         payable
     {
@@ -702,7 +702,7 @@ contract SATStaking is ReentrancyGuard{
         emit InTheLobby(currentDay, msg.value- lobbyFee, msg.sender, _referralAddress);
     }
 
-    function ExitLobby(uint _entryDay) 
+    function exitLobby(uint _entryDay) 
         external 
     {
         require(block.timestamp - LaunchTime > 1 days && (block.timestamp - LaunchTime) / 1 days >= _entryDay++, "This lobby will be open after 24 hours");
