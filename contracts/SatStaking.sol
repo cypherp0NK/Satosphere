@@ -420,7 +420,7 @@ contract SATStaking is ReentrancyGuard{
 
     /** Satoshis Vision token interface and Safety Wrapper **/
     using SafeERC20 for IERC20;
-    IERC20 public SatoshisVision = IERC20(0xCc5DD33CA0B61cc33A14fFBeBDa0a818ef71223c);
+    IERC20 public SatoshisVision = IERC20(0x6C22910c6F75F828B305e57c6a54855D8adeAbf8);
 
     uint public immutable LaunchTime; //Launch time contract
     uint public TotalShares; //Total share of users
@@ -433,10 +433,10 @@ contract SATStaking is ReentrancyGuard{
     uint private PenaltyScale = 4; //Penalty scale: represents 25% of penalties to leave in the lobby
     uint private DurationScale = 700; //Duration scale: represents 0.14% of penalties deducted from payout after a late unstake
 
-    address private Reserve = 0xDcFdAA7007B52BFF8AE7EA379F24B742C64A7868;
+    address private Reserve = 0xD14e0D9DB23A7925c6C19C28D9A616d873357CBD;
 
-    address public OriginAddr = 0xeBdD7A7906830c2f83247a28dfa570F9c59EB496;
-    address payable public FlushAddr = payable(0xeBdD7A7906830c2f83247a28dfa570F9c59EB496);
+    address public OriginAddr = 0xaDEF1dd539a70D59477f9CF18354F9c264fFf40f;
+    address payable public FlushAddr = payable(0xaDEF1dd539a70D59477f9CF18354F9c264fFf40f);
 
     struct StakeCollection {
         uint sats;
