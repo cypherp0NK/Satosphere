@@ -393,12 +393,12 @@ contract SATStaking is ReentrancyGuard{
         address indexed staker,
         uint payout,
         uint daysDelayed,
-        uint activeStakesLeft
+        uint activeStakes
     );
     event DirectStakeClaim(
         address indexed staker,
         uint payout,
-        uint activeStakesLeft
+        uint activeStakes
     );
 
     /**  Lobby event logs **/
@@ -430,8 +430,8 @@ contract SATStaking is ReentrancyGuard{
     
     uint private OriginScale = 10; //Origin scale: represents 10% of penalty / payout sent to the origin address
     uint private FlushScale = 1000; //Flush scale: represents 0.1% sent to flush address 
-    uint private PenaltyScale = 4; //Penalty scale: represents 25% of penalties to allocate to lobby members
-    uint private DurationScale = 700; //Duration scale: represents 0.14% of penalties on each day after 14 days of a stake being mature: Late unstake
+    uint private PenaltyScale = 4; //Penalty scale: represents 25% of penalties to leave in the lobby
+    uint private DurationScale = 700; //Duration scale: represents 0.14% of penalties deducted from payout after a late unstake
 
     address private Reserve = 0xDcFdAA7007B52BFF8AE7EA379F24B742C64A7868;
 
@@ -446,6 +446,16 @@ contract SATStaking is ReentrancyGuard{
         uint duration;
     }
 
+    struct StakeHistory {
+        uint sats;
+        uint share;
+        int yield;
+        uint startday;
+        uint payday;
+        uint duration;
+        uint closed;
+    }
+
     struct LobbyEntries {
         uint ethCheckIn;
         address referralAddress;
@@ -453,10 +463,11 @@ contract SATStaking is ReentrancyGuard{
 
     /** Stakers mapping **/
     mapping(address => StakeCollection[]) public stakersArray;
+    mapping(address => StakeHistory[]) public stakersHistory;
 
     /** Lobby mappings**/
     mapping(uint => mapping(address => LobbyEntries[])) public lobby;
-    mapping(address => uint[]) public lobbyMapping;
+    mapping(address => uint[]) public lobbyMapping; //Used by frontend to view a lobby member's day of entry. Does not affect flow of contract
     mapping(uint => uint) public lobbyTotalEth;
     mapping(uint => uint) public lobbyCut;
 
@@ -500,12 +511,14 @@ contract SATStaking is ReentrancyGuard{
         
         if (TotalShares == 0 ){
             stakersArray[msg.sender].push(StakeCollection(_satoshiAmount, _satoshiAmount, block.timestamp, block.timestamp + (_duration * 1 days), _duration));
+            stakersHistory[msg.sender].push(StakeHistory(_satoshiAmount, _satoshiAmount, 0, block.timestamp, block.timestamp + (_duration * 1 days), _duration, 0));
             TotalShares += _satoshiAmount;
         }
         else{
             uint TotalSATS = contractBalance();
             uint SATShare = _satoshiAmount * TotalShares / TotalSATS;
             stakersArray[msg.sender].push(StakeCollection(_satoshiAmount, SATShare, block.timestamp, block.timestamp + (_duration * 1 days), _duration));
+            stakersHistory[msg.sender].push(StakeHistory(_satoshiAmount, SATShare, 0, block.timestamp, block.timestamp + (_duration * 1 days), _duration, 0));
             TotalShares += SATShare;
         }
         emit Stake(msg.sender, _satoshiAmount, _duration, stakersArray[msg.sender].length - 1, stakersArray[msg.sender].length);
@@ -531,8 +544,11 @@ contract SATStaking is ReentrancyGuard{
         if (delay > 14 days){
             totalPayout = _calculateLatePayout(totalPayout, delay - 14 days);
         }
+
         TotalShares -= sc.share;
+        stakersHistory[_recipient][_arraySlot] = StakeHistory(sc.sats, sc.share, int(totalPayout) - int(sc.sats), sc.startday, sc.payday, sc.duration, block.timestamp);  
         deleteFromMapping(_recipient, _arraySlot);
+
         if (totalPayout > 0){
             if (totalPayout > SATS && totalPayout - SATS > OriginScale){
                 uint OriginAccounting = (totalPayout - SATS) / OriginScale;
@@ -576,8 +592,11 @@ contract SATStaking is ReentrancyGuard{
                 totalPayout = _calculateLatePayout(totalPayout, delay - 14 days);
             }
         }
+
         TotalShares -= sc.share;
+        stakersHistory[msg.sender][_arraySlot] = StakeHistory(sc.sats, sc.share, int(totalPayout) - int(sc.sats), sc.startday, sc.payday, sc.duration, block.timestamp);  
         deleteFromMapping(msg.sender, _arraySlot);
+
         if (totalPayout > 0){
             if (totalPayout > SATS && totalPayout - SATS > OriginScale){
                 uint OriginAccounting = (totalPayout - SATS) / OriginScale;
@@ -643,12 +662,32 @@ contract SATStaking is ReentrancyGuard{
         penalty = _rawPayout * secondsToDays / DurationScale;
     }
 
+    /** @notice 
+        Helper for frontend to receive user's stake length
+    */
+
+    function individualStakesLength(address _recipient) 
+        external 
+        view 
+        returns (uint, uint)
+    {
+        return (stakersArray[_recipient].length, stakersHistory[_recipient].length);
+    }
+
+    /** @notice 
+        Enter lobby with Eth to receive a percentage of penalties from early unstakers
+    */
+
     function enterLobby(address _referralAddress) 
         external 
         payable
     {
         require(msg.value != 0, "Value cannot be zero");
         require(currentDay() < EndOfLobby, "Lobbies have ended");
+
+        if (lobby[currentDay()][msg.sender].length == 0){
+            lobbyMapping[msg.sender].push(currentDay());
+        }
         
         uint lobbyFee = msg.value / FlushScale;
         lobby[currentDay()][msg.sender].push(LobbyEntries(msg.value - lobbyFee, _referralAddress));
@@ -656,6 +695,10 @@ contract SATStaking is ReentrancyGuard{
         FlushAddr.transfer(lobbyFee);
         emit InTheLobby(currentDay(), msg.value - lobbyFee, msg.sender, _referralAddress);
     }
+
+    /** @notice 
+        Exit lobby with Eth and any penalty rewards
+    */
 
     function exitLobby(uint _entryDay) 
         external 
@@ -688,9 +731,37 @@ contract SATStaking is ReentrancyGuard{
         if (totalRewards > 0 && SatoshisVision.balanceOf(address(this)) > totalRewards){
             SatoshisVision.safeTransfer(msg.sender, totalRewards);
         }
+        lobbyDelete(msg.sender, _entryDay);
         payable(msg.sender).transfer(ethCheckout);
         emit LeftTheLobby(_entryDay, (block.timestamp - _entryDay) / 1 days, ethCheckout, totalRewards, msg.sender, lobbyTotalEth[_entryDay]);
     }
+
+    /** @notice 
+        Delete from lobbyMapping which is used by frontend. Does not affect contract flow 
+    */
+    function lobbyDelete(address _member, uint _entryDaySlot) 
+        private 
+    {
+        if (_entryDaySlot != lobbyMapping[_member].length - 1) {
+            lobbyMapping[_member][_entryDaySlot] = lobbyMapping[_member][lobbyMapping[_member].length - 1];
+        }
+        lobbyMapping[_member].pop();
+    }
+
+    /** @notice 
+        Helper for frontend to receive days length of single lobby member 
+    */
+    function lobbyMemberDaysLength(address _member) 
+        external 
+        view 
+        returns (uint)
+    {
+        return lobbyMapping[_member].length;
+    }
+
+    /** @notice 
+        Remove foreign tokens from the smart contract
+    */
 
     function sweep(
         IERC20 token
@@ -698,6 +769,4 @@ contract SATStaking is ReentrancyGuard{
         require(token != SatoshisVision, "Cannot be SATS");
         token.safeTransfer(OriginAddr, token.balanceOf(address(this)));
     }
-
-    fallback() external payable {}
 }
