@@ -430,8 +430,8 @@ contract SATStaking is ReentrancyGuard{
     
     uint private OriginScale = 10; //Origin scale: represents 10% of penalty / payout sent to the origin address
     uint private FlushScale = 1000; //Flush scale: represents 0.1% sent to flush address 
-    uint private PenaltyScale = 4; //Penalty scale: represents 25% of penalties to leave in the lobby
-    uint private DurationScale = 700; //Duration scale: represents 0.14% of penalties deducted from payout after a late unstake
+    uint private PenaltyScale = 4; //Penalty scale: represents 25% of penalties to allocate to lobby members
+    uint private DurationScale = 700; //Duration scale: represents 0.14% of penalties on each day after 14 days of a stake being mature: Late unstake
 
     address private Reserve = 0xDcFdAA7007B52BFF8AE7EA379F24B742C64A7868;
 
