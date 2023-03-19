@@ -692,9 +692,6 @@ contract SATStaking is ReentrancyGuard{
         emit LeftTheLobby(_entryDay, (block.timestamp - _entryDay) / 1 days, ethCheckout, totalRewards, msg.sender, lobbyTotalEth[_entryDay]);
     }
 
-    /**
-     * @notice Removes foreign tokens from the contract.
-     */
     function sweep(
         IERC20 token
     ) external {
