@@ -468,7 +468,7 @@ contract SATStakingV2 is ReentrancyGuard{
 
     /** Satoshis Vision token interface and Safety Wrapper **/
     using SafeERC20 for IERC20;
-    IERC20 public SatoshisVision = IERC20(0x6C22910c6F75F828B305e57c6a54855D8adeAbf8); 
+    IERC20 public SatoshisVision = IERC20(0x6C22910c6F75F828B305e57c6a54855D8adeAbf8);
 
     uint public immutable LaunchTime; //Launch time contract
     uint public TotalShares; //Total share of users
@@ -483,7 +483,7 @@ contract SATStakingV2 is ReentrancyGuard{
     uint private PenaltyScale = 4; //Penalty scale: represents 25% of penalties to leave in the lobby
     uint private DurationScale = 700; //Duration scale: represents 0.14% of penalties deducted from payout after a late unstake
 
-    address private Reserve = 0xD14e0D9DB23A7925c6C19C28D9A616d873357CBD; 
+    address private Reserve = 0xD14e0D9DB23A7925c6C19C28D9A616d873357CBD;
 
     address public OriginAddr = 0xaDEF1dd539a70D59477f9CF18354F9c264fFf40f;
     address payable public FlushAddr = payable(OriginAddr);
@@ -693,7 +693,7 @@ contract SATStakingV2 is ReentrancyGuard{
     }
 
     function adjustLpbScale(uint scale) external onlyAdminOrReserve returns(uint){
-        LpbScale = scale >= 1820 ? scale : 0;
+        LpbScale = scale >= 900 ? scale : 0;
         return LpbScale;
     }
 
