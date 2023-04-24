@@ -862,7 +862,7 @@ contract SATStakingV2 is ReentrancyGuard{
     }
 
     /** @notice 
-        Helper for frontend to receive days length of single lobby member 
+        Helper for frontend to receive days length of a single lobby member 
     */
     function lobbyMemberDaysLength(address _member) 
         external 
