@@ -1,7 +1,7 @@
 from brownie import accounts, SatStaking
 
-SATOSHIS_VISION = ""
+TOKEN_ADDRESS = ""
 
 def main():
-    account = accounts.load("cypherp0NK")
-    account.deploy(SatStaking, SATOSHIS_VISION, publish_source=True)
+    account = accounts.load("cypherp0nk")
+    account.deploy(SatStaking, TOKEN_ADDRESS, publish_source=True)
